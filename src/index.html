@@ -1,22 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="styles.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus App</title>
-        <script type="module" src="/main.js" defer></script>
-    </head>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>日历与备忘录</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        #datepicker {
+            cursor: pointer;
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            margin: 20px auto;
+        }
+        #memoInputContainer {
+            margin-top: 20px;
+        }
+        #memoText {
+            padding: 8px;
+            width: 250px;
+            font-size: 14px;
+        }
+        #saveMemoBtn {
+            padding: 6px 12px;
+            font-size: 14px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        #memoList {
+            margin-top: 30px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
 
-    <body>
-        <main class="container">
-            <h1>Welcome to PakePlus</h1>
+<h2>📅 日历与备忘录</h2>
 
-            <form class="row" id="greet-form">
-                <input id="greet-input" placeholder="Enter a name..." />
-                <button type="submit">Greet</button>
-            </form>
-            <p id="greet-msg"></p>
-        </main>
-    </body>
+<!-- 输入框用于 Pikaday 绑定 -->
+<input type="text" id="datepicker" readonly placeholder="请选择日期"/>
+
+<!-- 自定义备忘录输入框和按钮 -->
+<div id="memoInputContainer" style="display:none;">
+    <input type="text" id="memoText" placeholder="请输入备忘录内容"/>
+    <button id="saveMemoBtn">确定</button>
+</div>
+
+<!-- 显示备忘录列表 -->
+<div id="memoList"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/pikaday/pikaday.min.js"></script>
+<script>
+    let selectedDate = null;
+
+    // 工具函数：格式化日期为 YYYY-MM-DD
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // 初始化日历
+    const picker = new Pikaday({
+        field: document.getElementById('datepicker'),
+        format: 'YYYY-MM-DD',
+        onSelect: function () {
+            const date = this.getDate(); // 获取 Date 对象
+            if (date) {
+                selectedDate = formatDate(date);
+                document.getElementById('memoInputContainer').style.display = 'inline-block';
+                document.getElementById('memoText').focus();
+                loadMemo(selectedDate);
+            }
+        }
+    });
+
+    // 加载已有备忘录到输入框
+    function loadMemo(date) {
+        const memo = localStorage.getItem(date) || '';
+        document.getElementById('memoText').value = memo;
+    }
+
+    // 保存备忘录
+    document.getElementById('saveMemoBtn').addEventListener('click', function () {
+        if (!selectedDate) {
+            alert("请先选择一个日期");
+            return;
+        }
+        const memoText = document.getElementById('memoText').value.trim();
+        if (memoText) {
+            localStorage.setItem(selectedDate, memoText);
+            alert("✅ 已保存备忘录");
+            displayMemos();
+        } else {
+            alert("内容不能为空");
+        }
+    });
+
+    // 展示所有备忘录
+    function displayMemos() {
+        const memoListDiv = document.getElementById('memoList');
+        memoListDiv.innerHTML = '<h3>📝 我的备忘录：</h3>';
+        let hasMemo = false;
+
+        for (let key in localStorage) {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+                const value = localStorage.getItem(key);
+                memoListDiv.innerHTML += `<p><strong>${key}</strong>: ${value}</p>`;
+                hasMemo = true;
+            }
+        }
+
+        if (!hasMemo) {
+            memoListDiv.innerHTML += `<p><em>暂无备忘录</em></p>`;
+        }
+    }
+
+    // 页面加载时初始化展示
+    window.onload = function () {
+        displayMemos();
+    };
+</script>
+
+</body>
 </html>
